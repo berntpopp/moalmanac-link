@@ -36,6 +36,8 @@ DEFECTS_BY_INDICATION: dict[str, str] = {
     "(January 2025) is missing from this release.",
     "ind:fda:datroway:0": "Upstream defect: statement stmt:fda:datroway:0:4 (EGFR exon 20 "
     "insertion) is mapped to Invasive Breast Carcinoma; the label text is for NSCLC.",
+    "ind:ema:tagrisso:3": "Upstream defect: the platinum + osimertinib regimens omit "
+    "pemetrexed; the label text is osimertinib with pemetrexed and platinum chemotherapy.",
     "ind:ema:lazcluze:0": "Upstream defect: the label document's brand/generic fields say "
     "Augtyro/repotrectinib; the label is Lazcluze (lazertinib).",
 }

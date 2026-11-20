@@ -100,7 +100,7 @@ def register_moa_tools(mcp: FastMCP) -> None:
             "and biomarkers over all matches. 'Wild type X' rows are eligibility criteria, not "
             "X-targeted drugs. Rows hit by a known upstream error carry `known_defects`. "
             "Signature: search_approvals(gene=, biomarker=, disease=, "
-            "therapy=, agency=, response_mode=, limit=, offset=)."
+            "therapy=, agency=, biomarker_type=, response_mode=, limit=, offset=)."
         ),
     )
     async def search_approvals(
@@ -129,6 +129,13 @@ def register_moa_tools(mcp: FastMCP) -> None:
         agency: Annotated[
             AgencyValue | None, Field(description="Only this agency's statements.")
         ] = None,
+        biomarker_type: Annotated[
+            BiomarkerType | None,
+            Field(
+                description="Only rows with a biomarker of this type (of `gene`, if given): "
+                "'Gene fusion' keeps ALK fusions and drops 'Wild type ALK' rows."
+            ),
+        ] = None,
         response_mode: Annotated[
             ResponseModeValue,
             Field(
@@ -146,6 +153,7 @@ def register_moa_tools(mcp: FastMCP) -> None:
             disease=disease,
             therapy=therapy,
             agency=agency,
+            biomarker_type=biomarker_type,
             response_mode=response_mode,
             limit=None if limit == DEFAULT_LIMIT else limit,
             offset=offset or None,
@@ -168,7 +176,15 @@ def register_moa_tools(mcp: FastMCP) -> None:
             "search_approvals",
             args,
             lambda: get_moa_service().search_approvals(
-                gene, biomarker, disease, therapy, agency, limit, offset, response_mode
+                gene,
+                biomarker,
+                disease,
+                therapy,
+                agency,
+                limit,
+                offset,
+                response_mode,
+                biomarker_type,
             ),
             steps,
         )

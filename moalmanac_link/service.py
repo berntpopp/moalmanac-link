@@ -96,7 +96,7 @@ def _unknown(
     args: dict[str, Any] | None = None,
 ) -> NotFoundError:
     """not_found naming the field; with vocabulary suggestions, retry steps that use them."""
-    tip = f" Closest names: {'; '.join(suggestions)}." if suggestions else ""
+    tip = " Closest names are in `suggestions`." if suggestions else ""
     steps = [cmd("search_approvals", **{**(args or {}), field: s}) for s in suggestions or []]
     return NotFoundError(
         f"No MOAlmanac approval found: the `{field}` value matches no {what} in MOAlmanac "
@@ -124,11 +124,20 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     def top(values: list[str], n: int = 15) -> dict[str, int]:
         return dict(Counter(values).most_common(n))
 
+    therapies = [" + ".join(r["therapies"]) for r in rows]
+    markers = [b for r in rows for b in r["biomarkers"]]
+    diseases = [r["disease"]["name"] for r in rows]
     return {
         "agencies": dict(Counter(r["agency"] for r in rows)),
-        "therapies": top([" + ".join(r["therapies"]) for r in rows]),
-        "biomarkers": top([b for r in rows for b in r["biomarkers"]]),
-        "diseases": top([r["disease"]["name"] for r in rows], 10),
+        "therapies": top(therapies),
+        "biomarkers": top(markers),
+        "diseases": top(diseases, 10),
+        # the maps above keep the most frequent 15 (diseases 10); these are the full counts
+        "distinct": {
+            "therapies": len(set(therapies)),
+            "biomarkers": len(set(markers)),
+            "diseases": len(set(diseases)),
+        },
     }
 
 
@@ -183,6 +192,7 @@ class MoaService:
         disease: str | None,
         therapy: str | None,
         agency: str | None,
+        biomarker_type: str | None = None,
     ) -> list[dict[str, Any]]:
         if agency is not None and agency not in AGENCIES:
             raise InvalidInputError(
@@ -227,8 +237,8 @@ class MoaService:
                 hint = _suggest(_disease_tokens(disease), names)
                 raise _unknown(
                     "disease",
-                    "disease name, OncoTree or NCIt code (subtypes such as LUAD are not "
-                    "expanded: try the organ, e.g. 'lung')",
+                    "disease name, OncoTree or NCIt code (subtypes are not expanded: try the "
+                    "organ, e.g. 'lung')",
                     cmd("search_approvals", **{k: v for k, v in given.items() if k != "disease"}),
                     hint,
                     given,
@@ -240,6 +250,13 @@ class MoaService:
             rows = [r for r in rows if self._therapy_hit(therapy, r)]
         if agency is not None:
             rows = [r for r in rows if r["agency"] == agency]
+        if biomarker_type is not None:  # e.g. Gene fusion: keeps v::ALK, drops Wild type ALK
+            kinds = {
+                b["name"]
+                for b in self.data["biomarkers"]
+                if b["type"] == biomarker_type and (gene is None or gene in b["genes"])
+            }
+            rows = [r for r in rows if kinds.intersection(r["biomarkers"])]
         return rows
 
     @staticmethod
@@ -265,7 +282,7 @@ class MoaService:
             out = {k: row[k] for k in _MINIMAL}
             out["disease"] = row["disease"]["name"]
             out["label"] = {k: row["label"][k] for k in ("document_id", "version_date")}
-            return out
+            return self._flag(out, row)
         out = {k: v for k, v in row.items() if k not in _STANDARD_ONLY}
         out["label"] = {k: v for k, v in row["label"].items() if k != "url"}
         if mode in ("standard", "full"):
@@ -274,6 +291,10 @@ class MoaService:
         if mode == "full":
             ind = self.data["indications"][row["indication_id"]]
             out["indication"] = fence(ind["description"], row["indication_id"])
+        return self._flag(out, row)
+
+    @staticmethod
+    def _flag(out: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
         if row["indication_id"] in DEFECTS_BY_INDICATION:
             out["known_defects"] = [DEFECTS_BY_INDICATION[row["indication_id"]]]
         return out
@@ -288,10 +309,11 @@ class MoaService:
         limit: int,
         offset: int,
         response_mode: str,
+        biomarker_type: str | None = None,
     ) -> dict[str, Any]:
         """Regulatory approvals matching every given filter, one row per agency statement."""
         symbol = self.resolve_gene(gene) if gene is not None else None
-        rows = self._rows(symbol, biomarker, disease, therapy, agency)
+        rows = self._rows(symbol, biomarker, disease, therapy, agency, biomarker_type)
         page = rows[offset : offset + limit]
         query = {
             k: v
@@ -301,6 +323,7 @@ class MoaService:
                 "disease": disease,
                 "therapy": therapy,
                 "agency": agency,
+                "biomarker_type": biomarker_type,
             }.items()
             if v is not None
         }
@@ -348,7 +371,10 @@ class MoaService:
             {**c, "description": fence(c["description"], key)} for c in ind["contributions"]
         ]
         rows = [r for r in self.data["approvals"] if r["indication_id"] == key]
-        payload = {"indication": out, "approvals": [self._shape(r, "compact") for r in rows]}
+        approvals = [self._shape(r, "compact") for r in rows]
+        for a in approvals:  # stated once, at the top
+            a.pop("known_defects", None)
+        payload = {"indication": out, "approvals": approvals}
         if key in DEFECTS_BY_INDICATION:
             payload["known_defects"] = [DEFECTS_BY_INDICATION[key]]
         return self._stamp(payload)

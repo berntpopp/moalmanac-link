@@ -78,3 +78,36 @@ async def test_unknown_value_keeps_the_absence_caveat(moa_service: MoaService) -
     with pytest.raises(NotFoundError) as err:
         await _search(moa_service, gene="KRAS", biomarker="G12D")
     assert "not evidence that no approval exists" in err.value.message
+
+
+async def test_known_defects_survive_minimal_mode(moa_service: MoaService) -> None:
+    out = await _search(moa_service, therapy="pemigatinib", response_mode="minimal")
+    assert {r["indication_id"] for r in out["approvals"] if r.get("known_defects")} == {
+        "ind:ema:pemazyre:0",
+        "ind:hse:00889:a",
+    }
+
+
+async def test_indication_states_its_defect_once(moa_service: MoaService) -> None:
+    ind = await moa_service.get_indication("ind:ema:tagrisso:3")
+    assert ind["known_defects"] and all("known_defects" not in r for r in ind["approvals"])
+
+
+async def test_suggestions_stay_out_of_the_capped_message(moa_service: MoaService) -> None:
+    with pytest.raises(NotFoundError) as err:
+        await _search(moa_service, disease="lung adenocarcinoma")
+    assert len(err.value.message) <= 280 and "`suggestions`" in err.value.message
+
+
+async def test_summary_discloses_distinct_counts(moa_service: MoaService) -> None:
+    out = await _search(moa_service, disease="breast", limit=1)
+    distinct = out["summary"]["distinct"]
+    assert distinct["therapies"] > len(out["summary"]["therapies"]) == 15
+
+
+async def test_biomarker_type_separates_targets_from_wild_type(moa_service: MoaService) -> None:
+    out = await _search(moa_service, gene="ALK", disease="NSCLC", biomarker_type="Gene fusion")
+    assert out["total"] == 38
+    assert all("v::ALK" in r["biomarkers"] for r in out["approvals"])
+    wild = await _search(moa_service, gene="EGFR", biomarker_type="Wild type")
+    assert all("Wild type EGFR" in r["biomarkers"] for r in wild["approvals"])

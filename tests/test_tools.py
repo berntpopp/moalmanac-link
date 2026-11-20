@@ -95,7 +95,7 @@ async def test_capabilities_and_diagnostics(facade: Any, call_tool: Any) -> None
     caps = await call_tool(facade, "get_server_capabilities", {})
     assert caps["tools"] == TOOLS and caps["research_use_only"] is True
     assert "not a clinical actionability report" in caps["research_use_notice"].lower()
-    assert len(caps["known_upstream_defects"]) == 6
+    assert len(caps["known_upstream_defects"]) == 7
     assert caps["release"]["doi"] == "10.5281/zenodo.23986188"
     diag = await call_tool(facade, "get_diagnostics", {})
     assert diag["snapshot"]["data_version"] == "v.2026-11-05"
