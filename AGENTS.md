@@ -13,8 +13,8 @@ Guidance for agents and contributors working in this repository.
 regulatory approvals of biomarker-directed cancer therapies from FDA, EMA, Health Canada,
 Ireland HSE and HPRA, with label versions and dates. It is one backend in the GeneFoundry
 `-link` fleet, federated behind `genefoundry-router` under the namespace **`moalmanac`**.
-Scaffolding was lifted from `pgscatalog-link` (via `cbioportal-link`). Tracking issue: see the
-genefoundry-router issue "moalmanac-link: new backend (cancer/somatic plan)".
+Scaffolding was lifted from `pgscatalog-link` (via `cbioportal-link`). Tracking issue:
+https://github.com/berntpopp/genefoundry-router/issues/350.
 
 ## Two planes (non-negotiable boundary)
 
