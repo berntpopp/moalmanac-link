@@ -1,0 +1,37 @@
+{
+  "dataset": "Molecular Oncology Almanac (MOAlmanac) database, referenced/ tables",
+  "data_version": "v.2026-11-05",
+  "release": "2.0.0",
+  "upstream_last_updated": "2026-10-28",
+  "source_repo": "vanallenlab/moalmanac-db",
+  "source_commit": "719ba8a5fa4c85a0ab599dc0748ea1eaec024af9",
+  "doi": "10.5281/zenodo.23986188",
+  "license": "CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/)",
+  "attribution": "Molecular Oncology Almanac, Van Allen lab, Dana-Farber Cancer Institute / Broad Institute (https://moalmanac.org)",
+  "citation": "Reardon B et al. Integrating molecular profiles into clinical frameworks through the Molecular Oncology Almanac to prospectively guide precision oncology. Nat Cancer 2021. PMID 35121878. doi:10.1038/s43018-021-00243-3",
+  "source_sha256": {
+    "referenced/about.json": "f925224712f31d8cdd1f9c28d56d095b1d86e685a7bb9ddc0ced43fc14dd4cbb",
+    "referenced/agents.json": "420140eecf65043047915b4c551b27e06f05e0714f6dea5552a2e5a55707a14a",
+    "referenced/biomarker_criteria.json": "12b2bee673a9d71e8280fa80d6bc9734ee0058ad46ce1713861a3719e11766cc",
+    "referenced/biomarkers.json": "4b9b20044dd24414c99c3b74a77d9c8975068a87c803e3cc209752834ebade27",
+    "referenced/contributions.json": "580744cd04ba0be5794c25e5bcbadf3bbf9fd7801873819a83571a103a6288e6",
+    "referenced/diseases.json": "e2b71f6aaeac3c76e2d9f50a9e56e31af67938c50e99b81c1a479d596884718c",
+    "referenced/documents.json": "f68a51fd369911b355c49da89b705d0491ec3d5a2ab5352dc287955329883616",
+    "referenced/genes.json": "5297a07e5c97fd18e921892ea127c133e53631b223bc69a49a313fea27bdf955",
+    "referenced/indications.json": "cdca71609ee9cf5652826f260986f1512cbca71778a1763f6c79a4d88f943427",
+    "referenced/mappings.json": "2ecefc089f050eb17550e577c10c252bc7131e35bfddc14f8e4d755c5743218c",
+    "referenced/propositions.json": "2c2eaa7deecc2ab3811fdee091016034fd3c436c96ae760fb15e51b931a84d08",
+    "referenced/statements.json": "15dd0459386bb70ad3e828e15dfc8bb1e3cb26670cceb3511d511ac30e9e8110",
+    "referenced/strengths.json": "dad3b7446ce4ae09fde2f40b5492afc14ae42b47ea779bf44def7f773f8e9d7a",
+    "referenced/therapies.json": "fe4378459a378b59113b28467878254c7ee7dd1239928f03a483f2714b394e41",
+    "referenced/therapy_groups.json": "4f2d27309e71b419b1c9a5aa4dd753d6798bafd3746fcf858461351a6cbfa604",
+    "referenced/urls.json": "d8eb906646c0eb152d1a08ca6edefdce12aa126d6a7e244f58e663c933b9768f"
+  },
+  "derived_file": "moalmanac_snapshot.json",
+  "derived_sha256": "b62d24c7f173e62159c276a31281aee69b5778f4210105ea4bdce3f989fee498",
+  "counts": {
+    "approvals": 2011,
+    "indications": 902,
+    "biomarkers": 184
+  }
+}
