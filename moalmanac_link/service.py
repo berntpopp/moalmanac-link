@@ -45,10 +45,19 @@ def _norm(text: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9.+<>=%*]+", " ", text.lower().replace("p.", "")).split())
 
 
+def _word_hit(token: str, words: list[str]) -> bool:
+    """A whole word, or the start of one for tokens with a digit (``V600`` -> ``v600e``)."""
+    if any(c.isdigit() for c in token):
+        return any(w.startswith(token) for w in words)
+    return token in words
+
+
 def _matches(query: str, *texts: str) -> bool:
-    """Every query token occurs in one of the texts (``V600`` also matches ``V600E``)."""
+    """Every query token is a word of one of the texts (so ``ER`` never hits ``HER2``)."""
     tokens = _norm(query).split()
-    return any(all(t in _norm(text) for t in tokens) for text in texts) if tokens else False
+    return bool(tokens) and any(
+        all(_word_hit(t, _norm(text).split()) for t in tokens) for text in texts
+    )
 
 
 def _unknown(field: str, what: str, step: dict[str, Any]) -> NotFoundError:

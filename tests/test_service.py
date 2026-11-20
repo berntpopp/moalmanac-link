@@ -143,3 +143,15 @@ async def test_list_biomarkers_by_type(moa_service: MoaService) -> None:
     out = await moa_service.list_biomarkers(None, "Gene fusion", 100, 0)
     assert out["total"] > 0 and {b["type"] for b in out["biomarkers"]} == {"Gene fusion"}
     assert all(b["approvals"] >= 0 for b in out["biomarkers"])
+
+
+async def test_short_tokens_match_whole_words_not_substrings(moa_service: MoaService) -> None:
+    # "ER" must not hit "HER2-positive" or "ERBB2"; a residue still prefixes (V600 -> V600E).
+    er = await _search(moa_service, biomarker="ER positive", limit=100)
+    assert all(any(b.startswith("ER ") for b in r["biomarkers"]) for r in er["approvals"])
+    with pytest.raises(NotFoundError):
+        await _search(moa_service, biomarker="AR")
+    v600 = await _search(moa_service, biomarker="BRAF V600", disease="melanoma")
+    assert {"BRAF p.V600E", "BRAF p.V600K"} <= {
+        b for r in v600["approvals"] for b in r["biomarkers"]
+    }
