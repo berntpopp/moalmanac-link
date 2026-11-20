@@ -82,11 +82,20 @@ async def test_over_cap_limit_suggests_the_clamped_call(facade: Any) -> None:
     ]
 
 
+async def test_wrong_case_enum_suggests_the_matching_value(facade: Any) -> None:
+    args = {"gene": "KRAS", "agency": "FDA"}
+    res = await _raw(facade, "search_approvals", args)
+    assert res.is_error is True
+    assert res.structured_content["_meta"]["next_commands"] == [
+        {"tool": "search_approvals", "arguments": {**args, "agency": "fda"}}
+    ]
+
+
 async def test_capabilities_and_diagnostics(facade: Any, call_tool: Any) -> None:
     caps = await call_tool(facade, "get_server_capabilities", {})
     assert caps["tools"] == TOOLS and caps["research_use_only"] is True
     assert "not a clinical actionability report" in caps["research_use_notice"].lower()
-    assert len(caps["known_upstream_defects"]) == 3
+    assert len(caps["known_upstream_defects"]) == 6
     assert caps["release"]["doi"] == "10.5281/zenodo.23986188"
     diag = await call_tool(facade, "get_diagnostics", {})
     assert diag["snapshot"]["data_version"] == "v.2026-11-05"

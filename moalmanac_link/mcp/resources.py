@@ -23,16 +23,31 @@ MOA_CITATION = (
     "(`source.doi`)."
 )
 
-#: Upstream data defects in the pinned release, served as-is (documented, never patched).
+#: Upstream data defects in the pinned release, served as-is (documented, never patched),
+#: keyed by the affected indication; each affected row and get_indication carry the note.
+DEFECTS_BY_INDICATION: dict[str, str] = {
+    "ind:ema:pemazyre:0": "Upstream defect: the therapy is named elacestrant, but the label "
+    "(Pemazyre, generic pemigatinib) is for pemigatinib.",
+    "ind:hse:00889:a": "Upstream defect: the therapy is named elacestrant, but the HSE regimen "
+    "(Pemigatinib Therapy) is for pemigatinib.",
+    "ind:fda:lumakras:0": "Upstream defect: status 'Approved' and the 2021-05-28 contribution "
+    "('traditional approval') contradict the label text served, which says accelerated "
+    "approval. Separately, FDA sotorasib + panitumumab for KRAS G12C colorectal cancer "
+    "(January 2025) is missing from this release.",
+    "ind:fda:datroway:0": "Upstream defect: statement stmt:fda:datroway:0:4 (EGFR exon 20 "
+    "insertion) is mapped to Invasive Breast Carcinoma; the label text is for NSCLC.",
+    "ind:ema:lazcluze:0": "Upstream defect: the label document's brand/generic fields say "
+    "Augtyro/repotrectinib; the label is Lazcluze (lazertinib).",
+}
+
 KNOWN_UPSTREAM_DEFECTS = [
-    "EMA and HSE pemigatinib statements for FGFR2-rearranged cholangiocarcinoma "
-    "(ind:ema:pemazyre:0, stmt:hse:00889:a:*) name the therapy elacestrant; the label "
-    "generic name (pemigatinib) shows the mismatch.",
-    "FDA sotorasib + panitumumab for KRAS G12C colorectal cancer (approved January 2025) "
-    "is missing; ind:fda:lumakras covers NSCLC only.",
-    "'HER2-positive' (protein expression, no gene) and 'ERBB2 amplification' are separate "
-    "biomarkers for overlapping indications; gene=ERBB2 (or HER2) matches both here, "
-    "biomarker='HER2-positive' matches only the former.",
+    f"{ind}: {note.removeprefix('Upstream defect: ')}"
+    for ind, note in DEFECTS_BY_INDICATION.items()
+] + [
+    "'HER2-positive' and 'ERBB2 amplification' are separate biomarkers for overlapping "
+    "indications; gene=ERBB2 (or HER2) matches both, biomarker='HER2-positive' matches only "
+    "the former. 'HER2-negative' has no gene, so gene=ERBB2 never returns it: use "
+    "biomarker='HER2-negative'.",
 ]
 
 MOA_SERVER_INSTRUCTIONS = (

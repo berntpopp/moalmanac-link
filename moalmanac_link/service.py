@@ -10,11 +10,13 @@ and can lag behind the agencies.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from typing import Any
 
 from moalmanac_link import snapshot
 from moalmanac_link.exceptions import InvalidInputError, NotFoundError
 from moalmanac_link.mcp.next_commands import cmd
+from moalmanac_link.mcp.resources import DEFECTS_BY_INDICATION
 from moalmanac_link.shaping import fence, page_block
 
 AGENCIES = ("fda", "ema", "hc", "hse", "hpra")
@@ -52,20 +54,56 @@ def _word_hit(token: str, words: list[str]) -> bool:
     return token in words
 
 
-def _matches(query: str, *texts: str) -> bool:
-    """Every query token is a word of one of the texts (so ``ER`` never hits ``HER2``)."""
+#: Words every disease name may or may not say: "breast cancer" must find "Invasive Breast
+#: Carcinoma", and "ovarian cancer" must not shrink to the one name that says "Cancer".
+_GENERIC_DISEASE = frozenset(
+    {"cancer", "cancers", "carcinoma", "carcinomas", "tumor", "tumors", "tumour", "tumours"}
+    | {"neoplasm", "neoplasms"}
+)
+
+
+def _disease_tokens(query: str) -> list[str]:
     tokens = _norm(query).split()
+    return [t for t in tokens if t not in _GENERIC_DISEASE] or tokens
+
+
+def _matches(query: str, *texts: str, tokens: list[str] | None = None) -> bool:
+    """Every query token is a word of one of the texts (so ``ER`` never hits ``HER2``)."""
+    tokens = tokens if tokens is not None else _norm(query).split()
     return bool(tokens) and any(
         all(_word_hit(t, _norm(text).split()) for t in tokens) for text in texts
     )
 
 
-def _unknown(field: str, what: str, step: dict[str, Any]) -> NotFoundError:
+def _suggest(tokens: list[str], vocabulary: dict[str, str]) -> list[str]:
+    """Up to 5 vocabulary names whose text has a word starting with a query token (3+ chars),
+    names hit by rarer tokens first (``lung`` outranks ``adenocarcinoma``)."""
+    words = {name: _norm(text).split() for name, text in vocabulary.items()}
+    hit = {
+        t: {n for n, ws in words.items() if any(w.startswith(t) for w in ws)}
+        for t in tokens
+        if len(t) >= 3
+    }
+    score = {n: sum(1 / len(ns) for ns in hit.values() if n in ns) for n in vocabulary}
+    return sorted((n for n in vocabulary if score[n]), key=lambda n: (-score[n], n))[:5]
+
+
+def _unknown(
+    field: str,
+    what: str,
+    step: dict[str, Any],
+    suggestions: list[str] | None = None,
+    args: dict[str, Any] | None = None,
+) -> NotFoundError:
+    """not_found naming the field; with vocabulary suggestions, retry steps that use them."""
+    tip = f" Closest names: {'; '.join(suggestions)}." if suggestions else ""
+    steps = [cmd("search_approvals", **{**(args or {}), field: s}) for s in suggestions or []]
     return NotFoundError(
         f"No MOAlmanac approval found: the `{field}` value matches no {what} in MOAlmanac "
-        f"release {snapshot.data_version()}.",
+        f"release {snapshot.data_version()} (this is not evidence that no approval exists).{tip}",
         field=field,
-        next_commands=[step],
+        suggestions=suggestions or [],
+        next_commands=steps[:3] or [step],
     )
 
 
@@ -77,6 +115,20 @@ def source() -> dict[str, Any]:
         "license": "CC-BY-4.0",
         "attribution": prov["attribution"],
         "doi": prov["doi"],
+    }
+
+
+def _summary(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    """Counts over every matched row (not just the page): agencies, top regimens, biomarkers."""
+
+    def top(values: list[str], n: int = 15) -> dict[str, int]:
+        return dict(Counter(values).most_common(n))
+
+    return {
+        "agencies": dict(Counter(r["agency"] for r in rows)),
+        "therapies": top([" + ".join(r["therapies"]) for r in rows]),
+        "biomarkers": top([b for r in rows for b in r["biomarkers"]]),
+        "diseases": top([r["disease"]["name"] for r in rows], 10),
     }
 
 
@@ -139,20 +191,47 @@ class MoaService:
                 allowed_values=list(AGENCIES),
             )
         rows: list[dict[str, Any]] = self.data["approvals"]
+        given = {
+            k: v
+            for k, v in {"gene": gene, "biomarker": biomarker, "disease": disease,
+                         "therapy": therapy, "agency": agency}.items()
+            if v is not None
+        }  # fmt: skip
         if gene is not None:
             rows = [r for r in rows if gene in r["genes"]]
         if biomarker is not None:
-            if not any(_matches(biomarker, b["name"]) for b in self.data["biomarkers"]):
-                raise _unknown("biomarker", "biomarker", cmd("list_biomarkers"))
-            rows = [
-                r
-                for r in rows
-                if _matches(biomarker, *(b for b in r["biomarkers"] if not b.startswith("NOT ")))
-            ]
+            names = {b["name"]: f"{b['name']} {b['type']}" for b in self.data["biomarkers"]}
+            exact = next((n for n in names if _norm(n) == _norm(biomarker)), None)
+            if exact is not None:  # a vocabulary name (from list_biomarkers) means that one
+                rows = [r for r in rows if exact in r["biomarkers"]]
+            elif not any(_matches(biomarker, n) for n in names):
+                pool = {
+                    b["name"]: names[b["name"]]
+                    for b in self.data["biomarkers"]
+                    if gene is None or gene in b["genes"]
+                }
+                hint = _suggest(_norm(biomarker).split(), pool)
+                step = cmd("list_biomarkers", **({"gene": gene} if gene else {}))
+                raise _unknown("biomarker", "biomarker", step, hint, given)
+            else:
+                rows = [
+                    r
+                    for r in rows
+                    if _matches(
+                        biomarker, *(b for b in r["biomarkers"] if not b.startswith("NOT "))
+                    )
+                ]
         if disease is not None:
             if not any(self._disease_hit(disease, r) for r in self.data["approvals"]):
+                names = {r["disease"]["name"]: r["disease"]["name"] for r in self.data["approvals"]}
+                hint = _suggest(_disease_tokens(disease), names)
                 raise _unknown(
-                    "disease", "disease name, OncoTree or NCIt code", cmd("search_approvals")
+                    "disease",
+                    "disease name, OncoTree or NCIt code (subtypes such as LUAD are not "
+                    "expanded: try the organ, e.g. 'lung')",
+                    cmd("search_approvals", **{k: v for k, v in given.items() if k != "disease"}),
+                    hint,
+                    given,
                 )
             rows = [r for r in rows if self._disease_hit(disease, r)]
         if therapy is not None:
@@ -172,12 +251,14 @@ class MoaService:
             d["ncit"][5:].lower(),
         ):
             return True
-        return _matches(query, d["name"])
+        return _matches(query, d["name"], tokens=_disease_tokens(query))
 
     @staticmethod
     def _therapy_hit(query: str, row: dict[str, Any]) -> bool:
         label = row["label"]
-        return _matches(query, *row["therapies"], label["brand"] or "", label["generic"] or "")
+        return _matches(
+            query, *row["therapies"], label["brand"] or "", label["generic"] or "", label["name"]
+        )
 
     def _shape(self, row: dict[str, Any], mode: str) -> dict[str, Any]:
         if mode == "minimal":
@@ -193,6 +274,8 @@ class MoaService:
         if mode == "full":
             ind = self.data["indications"][row["indication_id"]]
             out["indication"] = fence(ind["description"], row["indication_id"])
+        if row["indication_id"] in DEFECTS_BY_INDICATION:
+            out["known_defects"] = [DEFECTS_BY_INDICATION[row["indication_id"]]]
         return out
 
     async def search_approvals(
@@ -227,7 +310,9 @@ class MoaService:
         payload["approvals"] = [self._shape(r, response_mode) for r in page]
         payload.update(page_block(total=len(rows), returned=len(page), limit=limit, offset=offset))
         payload["response_mode"] = response_mode
-        if not rows:
+        if rows:
+            payload["summary"] = _summary(rows)
+        else:
             payload["message"] = _NO_APPROVAL.format(dv=snapshot.data_version())
         return self._stamp(payload)
 
@@ -235,11 +320,13 @@ class MoaService:
         """One indication: fenced label text, history, label documents and its approvals."""
         key = indication_id.strip()
         if not _INDICATION.match(key):
+            ids = sorted(i for i in self.data["indications"] if f":{key.lower()}:" in i)
             raise InvalidInputError(
                 "`indication_id` must look like ind:fda:lumakras:0 (from search_approvals).",
                 field="indication_id",
                 allowed_values=["ind:<agency>:<product>:<n>"],
-                next_commands=[cmd("search_approvals")],
+                next_commands=[cmd("get_indication", indication_id=i) for i in ids[:5]]
+                or [cmd("search_approvals")],
             )
         ind = self.data["indications"].get(key)
         if ind is None:
@@ -261,9 +348,10 @@ class MoaService:
             {**c, "description": fence(c["description"], key)} for c in ind["contributions"]
         ]
         rows = [r for r in self.data["approvals"] if r["indication_id"] == key]
-        return self._stamp(
-            {"indication": out, "approvals": [self._shape(r, "compact") for r in rows]}
-        )
+        payload = {"indication": out, "approvals": [self._shape(r, "compact") for r in rows]}
+        if key in DEFECTS_BY_INDICATION:
+            payload["known_defects"] = [DEFECTS_BY_INDICATION[key]]
+        return self._stamp(payload)
 
     async def list_biomarkers(
         self, gene: str | None, biomarker_type: str | None, limit: int, offset: int

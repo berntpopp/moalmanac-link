@@ -95,8 +95,11 @@ def register_moa_tools(mcp: FastMCP) -> None:
             "(FDA, EMA, Health Canada, Ireland HSE/HPRA). One row per agency statement: "
             "agency, status (Approved/Accelerated), biomarkers, genes, disease (NCIt, OncoTree), "
             "therapies, label document, version date and regulatory ID. Filters combine with "
-            "AND; an unknown value is not_found naming it. Empty = no MOAlmanac approval found, "
-            "not 'not approved'. Signature: search_approvals(gene=, biomarker=, disease=, "
+            "AND; an unknown value is not_found naming it, with the closest names. Empty = no "
+            "MOAlmanac approval found, not 'not approved'. `summary` counts agencies, regimens "
+            "and biomarkers over all matches. 'Wild type X' rows are eligibility criteria, not "
+            "X-targeted drugs. Rows hit by a known upstream error carry `known_defects`. "
+            "Signature: search_approvals(gene=, biomarker=, disease=, "
             "therapy=, agency=, response_mode=, limit=, offset=)."
         ),
     )
@@ -107,7 +110,8 @@ def register_moa_tools(mcp: FastMCP) -> None:
             Field(
                 min_length=1,
                 max_length=80,
-                description="Biomarker words, e.g. 'BRAF V600E', 'G12C', 'HER2-positive'.",
+                description="Biomarker words, e.g. 'BRAF V600E', 'G12C' (V600 also matches "
+                "V600E/K); an exact list_biomarkers name matches only that biomarker.",
             ),
         ] = None,
         disease: Annotated[
