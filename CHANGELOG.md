@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `search_approvals(biomarker_type=)`: only rows with a biomarker of that type (of `gene`,
+  if given), e.g. `Gene fusion` separates ALK-fusion approvals from "Wild type ALK" rows.
+- `search_approvals(limit=0)` returns only `total` and `summary`; `summary` (first page)
+  counts agencies, regimens, biomarkers and diseases over every match, with `distinct` totals.
+- Rows and `get_indication` affected by a known upstream defect carry `known_defects`; the
+  register adds the Lumakras status, Datroway disease, Lazcluze label and Tagrisso regimen
+  defects and the HER2-negative gene gap.
+- `not_found` for a gene, biomarker, disease or therapy names the closest vocabulary entries
+  in `candidates` with ready retries; `get_indication` with a bare product name suggests its IDs;
+  a wrong-case enum value (`agency="FDA"`) gets a corrected retry.
+- Agent UX evaluation protocol, frozen tasks and runner (`docs/benchmarks/`, `scripts/agent_ux_*`).
+
+### Fixed
+
+- Generic disease words no longer narrow or fail a search: "breast cancer" was `not_found`
+  and "ovarian cancer" matched 2 of 57 ovarian rows.
+- An exact `list_biomarkers` name matches only that biomarker ("EGFR activating variants"
+  no longer also returns "EGFR TKD activating variants").
+- `therapy=` also matches the label name (the HSE pemigatinib regimen was unreachable).
+
 ## [0.1.0] - 2026-11-20
 
 ### Added
