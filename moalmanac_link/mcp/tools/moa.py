@@ -131,7 +131,8 @@ def register_moa_tools(mcp: FastMCP) -> None:
             Field(
                 min_length=2,
                 max_length=80,
-                description="Disease name words (melanoma), OncoTree (NSCLC) or NCIt code.",
+                description="Disease name words (melanoma), or an OncoTree (NSCLC) or NCIt code "
+                "as MOAlmanac records it; subtype codes (LUAD) are not mapped to parents.",
             ),
         ] = None,
         therapy: Annotated[

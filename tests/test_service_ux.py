@@ -139,3 +139,10 @@ async def test_unknown_therapy_suggests_names(moa_service: MoaService) -> None:
 async def test_later_pages_do_not_say_no_approval_found(moa_service: MoaService) -> None:
     out = await _search(moa_service, biomarker="BRAF V600E", disease="melanoma", offset=20)
     assert out["approvals"] and "message" not in out
+
+
+async def test_summary_counts_rows_with_known_defects(moa_service: MoaService) -> None:
+    out = await _search(moa_service, therapy="pemigatinib", limit=0)
+    assert out["summary"]["known_defect_rows"] == 4
+    clean = await _search(moa_service, gene="KRAS", biomarker="G12C", disease="NSCLC", limit=0)
+    assert clean["summary"]["known_defect_rows"] == 1  # ind:fda:lumakras:0

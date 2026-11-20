@@ -124,7 +124,7 @@ def source() -> dict[str, Any]:
     }
 
 
-def _summary(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Counts over every matched row (not just the page): agencies, top regimens, biomarkers."""
 
     def top(values: list[str], n: int = 15) -> dict[str, int]:
@@ -138,6 +138,8 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
         "therapies": top(therapies),
         "biomarkers": top(markers),
         "diseases": top(diseases, 10),
+        # rows whose served values carry a documented upstream error (see known_defects)
+        "known_defect_rows": sum(r["indication_id"] in DEFECTS_BY_INDICATION for r in rows),
         # the maps above keep the most frequent 15 (diseases 10); these are the full counts
         "distinct": {
             "therapies": len(set(therapies)),
