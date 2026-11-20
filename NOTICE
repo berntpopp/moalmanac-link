@@ -1,0 +1,28 @@
+moalmanac-link
+Copyright (c) moalmanac-link contributors. Code licensed under the MIT licence (see LICENSE).
+
+Research use only. Not clinical decision support and not a clinical actionability report.
+The Molecular Oncology Almanac is likewise not validated for clinical use.
+
+Molecular Oncology Almanac data (bundled)
+-----------------------------------------
+moalmanac_link/data/moalmanac_snapshot.json is derived from the Molecular Oncology Almanac
+(MOAlmanac, https://moalmanac.org) database, Van Allen lab, Dana-Farber Cancer Institute /
+Broad Institute: vanallenlab/moalmanac-db release v.2026-11-05 (commit
+719ba8a5fa4c85a0ab599dc0748ea1eaec024af9, Zenodo DOI 10.5281/zenodo.23986188), the
+referenced/ tables. The database content is licensed under the Creative Commons Attribution
+4.0 International licence (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/).
+
+Changes made: scripts/build_snapshot.py keeps only active statements, joins the referenced
+tables into one row per statement, links protein-expression markers to their gene (for
+example HER2 to ERBB2, except "Negative" markers) and drops fields this server does not serve.
+No statement, therapy, biomarker or disease value is altered; known upstream defects are
+served as-is and documented in README.md. Source and derived sha256 digests are recorded in
+moalmanac_link/data/moalmanac_provenance.json. The derived snapshot is offered under the same
+CC BY 4.0 licence. No MOAlmanac code (GPL-2.0) is included.
+
+Cite MOAlmanac:
+  Reardon B, Moore ND, Moore NS, et al. Integrating molecular profiles into clinical
+  frameworks through the Molecular Oncology Almanac to prospectively guide precision
+  oncology. Nat Cancer 2021. PMID 35121878. doi:10.1038/s43018-021-00243-3
+and the database release used (Zenodo DOI 10.5281/zenodo.23986188).

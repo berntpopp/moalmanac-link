@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "dockerfile": "docker/Dockerfile",
+  "target": "production",
+  "platform": "linux/amd64",
+  "service": {
+    "compose_files": [
+      "docker/docker-compose.yml",
+      "docker/docker-compose.prod.yml"
+    ],
+    "name": "moalmanac-link",
+    "container_port": 8000,
+    "health_path": "/health",
+    "mcp_path": "/mcp",
+    "startup_timeout_seconds": 90,
+    "deployed_compose_files": [
+      "docker/docker-compose.npm.yml"
+    ]
+  },
+  "data": {
+    "mode": "none",
+    "image_allowlist": [
+      "home/app/web/moalmanac_link/data/moalmanac_snapshot.json",
+      "home/app/web/moalmanac_link/data/moalmanac_provenance.json",
+      "opt/venv/lib/python3.14/site-packages/beartype/_check/cls/hint/data/__init__.py",
+      "opt/venv/lib/python3.14/site-packages/beartype/_check/cls/hint/data/hintdataabc.py",
+      "opt/venv/lib/python3.14/site-packages/beartype/_check/cls/hint/data/hintdatacode.py",
+      "opt/venv/lib/python3.14/site-packages/beartype/_check/cls/hint/data/hintdataerror.py",
+      "opt/venv/lib/python3.14/site-packages/moalmanac_link/data/moalmanac_snapshot.json",
+      "opt/venv/lib/python3.14/site-packages/moalmanac_link/data/moalmanac_provenance.json"
+    ]
+  },
+  "definitions": {
+    "contract": "data-independent"
+  },
+  "smoke": {
+    "profile": "compose"
+  }
+}
