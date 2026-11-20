@@ -146,3 +146,9 @@ async def test_summary_counts_rows_with_known_defects(moa_service: MoaService) -
     assert out["summary"]["known_defect_rows"] == 4
     clean = await _search(moa_service, gene="KRAS", biomarker="G12C", disease="NSCLC", limit=0)
     assert clean["summary"]["known_defect_rows"] == 1  # ind:fda:lumakras:0
+
+
+def test_every_registered_defect_names_a_snapshot_indication(moa_service: MoaService) -> None:
+    from moalmanac_link.mcp.resources import DEFECTS_BY_INDICATION
+
+    assert set(DEFECTS_BY_INDICATION) <= set(moa_service.data["indications"])
