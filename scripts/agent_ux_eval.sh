@@ -5,7 +5,8 @@
 #   scripts/agent_ux_eval.sh <out-dir> [mcp-url] [task-glob]
 #
 # The server must already be running (python server.py --transport unified --port 18504).
-# SLOT (optional) prefixes each session, e.g. a semaphore wrapper shared with other evaluations.
+# SLOT (optional) prefixes each session, e.g. a semaphore wrapper shared with other evaluations;
+# AGENTS (optional) narrows the agent list, e.g. to rerun one agent after a usage-limit stop.
 set -uo pipefail
 OUT=${1:?usage: agent_ux_eval.sh <out-dir> [mcp-url] [task-glob]}
 URL=${2:-http://127.0.0.1:18504/mcp}
@@ -17,7 +18,7 @@ curl -sf "${URL%/mcp}/health" >/dev/null || { echo "server not reachable at $URL
 agy mcp add eval-moalmanac-link "$URL" >/dev/null
 
 # One session per agent at a time (3 concurrent): prompts run in sequence, agents in parallel.
-for agent in claude codex agy; do
+for agent in ${AGENTS:-claude codex agy}; do
   ( for task in $TASKS; do ${SLOT:-} "$HERE/agent_ux_session.sh" "$agent" "$task" "$OUT" "$URL"; done ) &
 done
 wait
