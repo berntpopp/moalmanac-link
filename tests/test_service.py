@@ -17,6 +17,7 @@ async def _search(svc: MoaService, **kw: Any) -> dict[str, Any]:
         "disease": None,
         "therapy": None,
         "agency": None,
+        "biomarker_type": None,
         "limit": 100,
         "offset": 0,
         "response_mode": "compact",

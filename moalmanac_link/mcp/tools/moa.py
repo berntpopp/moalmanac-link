@@ -51,6 +51,15 @@ Limit = Annotated[
     StrictInt,
     Field(ge=1, le=MAX_LIMIT, description=f"Max rows (default {DEFAULT_LIMIT}, max {MAX_LIMIT})."),
 ]
+SearchLimit = Annotated[
+    StrictInt,
+    Field(
+        ge=0,
+        le=MAX_LIMIT,
+        description=f"Max rows (default {DEFAULT_LIMIT}, max {MAX_LIMIT}); 0 = only total "
+        "and summary.",
+    ),
+]
 Offset = Annotated[
     StrictInt, Field(ge=0, description="Rows to skip; use the previous `next_offset`.")
 ]
@@ -62,7 +71,9 @@ def _args(**values: Any) -> dict[str, Any]:
 
 
 def _paged(payload: dict[str, Any], tool: str, args: dict[str, Any]) -> list[dict[str, Any]]:
-    """Next page first when truncated."""
+    """Next page first when truncated (after a limit=0 count, the first page of rows)."""
+    if payload.get("limit") == 0 and payload.get("total"):
+        return [cmd(tool, **{k: v for k, v in args.items() if k != "limit"})]
     if payload.get("next_offset") is not None:
         return [cmd(tool, **{**args, "offset": payload["next_offset"]})]
     return []
@@ -95,9 +106,13 @@ def register_moa_tools(mcp: FastMCP) -> None:
             "(FDA, EMA, Health Canada, Ireland HSE/HPRA). One row per agency statement: "
             "agency, status (Approved/Accelerated), biomarkers, genes, disease (NCIt, OncoTree), "
             "therapies, label document, version date and regulatory ID. Filters combine with "
-            "AND; an unknown value is not_found naming it. Empty = no MOAlmanac approval found, "
-            "not 'not approved'. Signature: search_approvals(gene=, biomarker=, disease=, "
-            "therapy=, agency=, response_mode=, limit=, offset=)."
+            "AND; an unknown value is not_found naming it, with the closest names. Empty = no "
+            "MOAlmanac approval found, not 'not approved'. `summary` counts agencies, regimens "
+            "and biomarkers (co-occurring ones too) over all matches. 'Wild type X' rows are "
+            "eligibility criteria, not X-targeted drugs. Rows hit by a known upstream error "
+            "carry `known_defects`. "
+            "Signature: search_approvals(gene=, biomarker=, disease=, "
+            "therapy=, agency=, biomarker_type=, response_mode=, limit=, offset=)."
         ),
     )
     async def search_approvals(
@@ -107,7 +122,9 @@ def register_moa_tools(mcp: FastMCP) -> None:
             Field(
                 min_length=1,
                 max_length=80,
-                description="Biomarker words, e.g. 'BRAF V600E', 'G12C', 'HER2-positive'.",
+                description="Biomarker words, e.g. 'BRAF V600E', 'G12C', 'v::ALK' (fusions are "
+                "'v::GENE', any partner; V600 also matches "
+                "V600E/K); an exact list_biomarkers name matches only that biomarker.",
             ),
         ] = None,
         disease: Annotated[
@@ -115,7 +132,8 @@ def register_moa_tools(mcp: FastMCP) -> None:
             Field(
                 min_length=2,
                 max_length=80,
-                description="Disease name words (melanoma), OncoTree (NSCLC) or NCIt code.",
+                description="Disease name words (melanoma), or an OncoTree (NSCLC) or NCIt code "
+                "as MOAlmanac records it; subtype codes (LUAD) are not mapped to parents.",
             ),
         ] = None,
         therapy: Annotated[
@@ -125,6 +143,13 @@ def register_moa_tools(mcp: FastMCP) -> None:
         agency: Annotated[
             AgencyValue | None, Field(description="Only this agency's statements.")
         ] = None,
+        biomarker_type: Annotated[
+            BiomarkerType | None,
+            Field(
+                description="Only rows with a biomarker of this type (of `gene`, if given): "
+                "'Gene fusion' keeps ALK fusions and drops 'Wild type ALK' rows."
+            ),
+        ] = None,
         response_mode: Annotated[
             ResponseModeValue,
             Field(
@@ -133,7 +158,7 @@ def register_moa_tools(mcp: FastMCP) -> None:
                 "predicate, strength | full: + fenced indication text."
             ),
         ] = "compact",
-        limit: Limit = DEFAULT_LIMIT,
+        limit: SearchLimit = DEFAULT_LIMIT,
         offset: Offset = 0,
     ) -> ToolReturn:
         args = _args(
@@ -142,6 +167,7 @@ def register_moa_tools(mcp: FastMCP) -> None:
             disease=disease,
             therapy=therapy,
             agency=agency,
+            biomarker_type=biomarker_type,
             response_mode=response_mode,
             limit=None if limit == DEFAULT_LIMIT else limit,
             offset=offset or None,
@@ -164,7 +190,15 @@ def register_moa_tools(mcp: FastMCP) -> None:
             "search_approvals",
             args,
             lambda: get_moa_service().search_approvals(
-                gene, biomarker, disease, therapy, agency, limit, offset, response_mode
+                gene,
+                biomarker,
+                disease,
+                therapy,
+                agency,
+                limit,
+                offset,
+                response_mode,
+                biomarker_type,
             ),
             steps,
         )

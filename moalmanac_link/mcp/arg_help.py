@@ -192,8 +192,15 @@ def tool_signature(name: str, schema: Mapping[str, Any]) -> str:
 def corrected_value(loc: str, value: Any, field_schema: Mapping[str, Any]) -> Any:
     """The unambiguous fix for a rejected value, or ``None``.
 
-    An integer outside its range is clamped to the nearest bound.
+    An integer outside its range is clamped to the nearest bound; a string that differs from
+    one enum value only in case (``FDA``) becomes that value.
     """
+    if isinstance(value, str):
+        nodes = [field_schema, *field_schema.get("anyOf", [])]
+        enum = [v for n in nodes for v in n.get("enum", []) if isinstance(v, str)]
+        same = [v for v in enum if v.casefold() == value.casefold()]
+        if len(same) == 1:
+            return same[0]
     if isinstance(value, int) and not isinstance(value, bool):
         nodes = [field_schema, *field_schema.get("anyOf", [])]
         lo = next((n["minimum"] for n in nodes if "minimum" in n), None)

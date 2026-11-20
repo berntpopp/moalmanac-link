@@ -29,8 +29,12 @@ ignored), so this server answers from a tagged data release instead.
 - **One row per agency statement.** Agency, status (Approved/Accelerated), biomarkers, genes,
   disease (NCIt, OncoTree), regimen, label document, version date and regulatory ID.
 - **Strict filters.** A filter value that matches nothing in the release is `not_found`
-  naming the parameter. An empty combination says "No MOAlmanac approval found", never
-  "not approved": MOAlmanac is a curated subset that can lag behind the agencies.
+  naming the parameter, with the closest vocabulary names in `candidates`. An empty
+  combination says "No MOAlmanac approval found", never "not approved": MOAlmanac is a
+  curated subset that can lag behind the agencies.
+- **Counts without paging.** `summary` counts agencies, regimens and biomarkers over every
+  match; `limit=0` returns only `total` and `summary`. `biomarker_type="Gene fusion"`
+  separates ALK-fusion approvals from "Wild type ALK" eligibility rows.
 - **HER2 = ERBB2.** Upstream keys "HER2-positive" to no gene; `gene=ERBB2` (or `HER2`) also
   matches it. Gene IDs (HGNC, Ensembl, NCBI) resolve too.
 - **Pinned and verified.** The snapshot records tag, commit and sha256s; a schema change
@@ -97,8 +101,11 @@ CIViC for literature evidence.
 
 **Known upstream defects** (served as-is, never patched): EMA/HSE pemigatinib
 cholangiocarcinoma statements name elacestrant (the label document shows pemigatinib);
-FDA sotorasib + panitumumab for KRAS G12C colorectal cancer is missing; "HER2-positive" and
-"ERBB2 amplification" are separate biomarkers. `get_server_capabilities` lists them.
+FDA sotorasib + panitumumab for KRAS G12C colorectal cancer is missing; FDA sotorasib NSCLC
+is "Approved" although its label text says accelerated approval; one Datroway statement is
+mapped to breast cancer; the EMA Tagrisso platinum regimens omit pemetrexed; "HER2-positive"
+and "ERBB2 amplification" are separate biomarkers. `get_server_capabilities` lists them and
+each affected row carries `known_defects`.
 
 **Terms.** MOAlmanac database content is
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (Van Allen lab, Dana-Farber
