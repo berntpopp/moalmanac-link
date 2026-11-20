@@ -97,7 +97,7 @@ def register_moa_tools(mcp: FastMCP) -> None:
             "therapies, label document, version date and regulatory ID. Filters combine with "
             "AND; an unknown value is not_found naming it, with the closest names. Empty = no "
             "MOAlmanac approval found, not 'not approved'. `summary` counts agencies, regimens "
-            "and biomarkers over all matches. 'Wild type X' rows are eligibility criteria, not "
+            "and biomarkers (co-occurring ones too) over all matches. 'Wild type X' rows are eligibility criteria, not "
             "X-targeted drugs. Rows hit by a known upstream error carry `known_defects`. "
             "Signature: search_approvals(gene=, biomarker=, disease=, "
             "therapy=, agency=, biomarker_type=, response_mode=, limit=, offset=)."

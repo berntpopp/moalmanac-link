@@ -22,10 +22,10 @@ async def test_generic_disease_words_do_not_narrow(moa_service: MoaService) -> N
 async def test_unknown_disease_suggests_vocabulary(moa_service: MoaService) -> None:
     with pytest.raises(NotFoundError) as err:
         await _search(moa_service, gene="KRAS", disease="lung adenocarcinoma")
-    assert "Non-Small Cell Lung Cancer" in err.value.extra["suggestions"]
+    assert "Non-Small Cell Lung Cancer" in err.value.extra["candidates"]
     step = err.value.extra["next_commands"][0]
     assert step["arguments"]["gene"] == "KRAS"
-    assert step["arguments"]["disease"] in err.value.extra["suggestions"]
+    assert step["arguments"]["disease"] in err.value.extra["candidates"]
 
 
 @pytest.mark.parametrize(
@@ -37,7 +37,7 @@ async def test_unknown_biomarker_suggests_vocabulary(
 ) -> None:
     with pytest.raises(NotFoundError) as err:
         await _search(moa_service, biomarker=query)
-    assert expected in err.value.extra["suggestions"]
+    assert expected in err.value.extra["candidates"]
 
 
 async def test_exact_vocabulary_name_matches_only_that_biomarker(moa_service: MoaService) -> None:
@@ -96,7 +96,7 @@ async def test_indication_states_its_defect_once(moa_service: MoaService) -> Non
 async def test_suggestions_stay_out_of_the_capped_message(moa_service: MoaService) -> None:
     with pytest.raises(NotFoundError) as err:
         await _search(moa_service, disease="lung adenocarcinoma")
-    assert len(err.value.message) <= 280 and "`suggestions`" in err.value.message
+    assert len(err.value.message) <= 280 and "`candidates`" in err.value.message
 
 
 async def test_summary_discloses_distinct_counts(moa_service: MoaService) -> None:
@@ -111,3 +111,9 @@ async def test_biomarker_type_separates_targets_from_wild_type(moa_service: MoaS
     assert all("v::ALK" in r["biomarkers"] for r in out["approvals"])
     wild = await _search(moa_service, gene="EGFR", biomarker_type="Wild type")
     assert all("Wild type EGFR" in r["biomarkers"] for r in wild["approvals"])
+
+
+async def test_unknown_gene_suggests_symbols(moa_service: MoaService) -> None:
+    with pytest.raises(NotFoundError) as err:
+        await _search(moa_service, gene="NTRK")
+    assert {"NTRK1", "NTRK2", "NTRK3"} <= set(err.value.extra["candidates"])

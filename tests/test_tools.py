@@ -116,3 +116,10 @@ async def test_descriptions_name_only_returned_fields(facade: Any, call_tool: An
     )
     bms = await call_tool(facade, "list_biomarkers", {"gene": "EGFR"})
     assert {"name", "type", "genes", "approvals"} <= set(bms["biomarkers"][0])
+
+
+async def test_not_found_envelope_carries_candidates(facade: Any) -> None:
+    res = await _raw(facade, "search_approvals", {"biomarker": "NTRK"})
+    body = res.structured_content
+    assert res.is_error is True and body["field"] == "biomarker"
+    assert "v::NTRK1" in body["candidates"]

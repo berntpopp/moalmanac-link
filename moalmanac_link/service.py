@@ -96,13 +96,13 @@ def _unknown(
     args: dict[str, Any] | None = None,
 ) -> NotFoundError:
     """not_found naming the field; with vocabulary suggestions, retry steps that use them."""
-    tip = " Closest names are in `suggestions`." if suggestions else ""
+    tip = " Closest names are in `candidates`." if suggestions else ""
     steps = [cmd("search_approvals", **{**(args or {}), field: s}) for s in suggestions or []]
     return NotFoundError(
         f"No MOAlmanac approval found: the `{field}` value matches no {what} in MOAlmanac "
         f"release {snapshot.data_version()} (this is not evidence that no approval exists).{tip}",
         field=field,
-        suggestions=suggestions or [],
+        candidates=suggestions or [],
         next_commands=steps[:3] or [step],
     )
 
@@ -182,7 +182,9 @@ class MoaService:
             )
         symbol = self.genes.get(key.upper())
         if symbol is None:
-            raise _unknown("gene", "gene", cmd("list_biomarkers"))
+            symbols = {g: g for g in set(self.genes.values())}
+            hint = _suggest(_norm(raw).split(), symbols)
+            raise _unknown("gene", "gene", cmd("list_biomarkers"), hint, {})
         return symbol
 
     def _rows(
