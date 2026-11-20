@@ -134,3 +134,8 @@ async def test_unknown_therapy_suggests_names(moa_service: MoaService) -> None:
     with pytest.raises(NotFoundError) as err:
         await _search(moa_service, therapy="sotorasibb")
     assert "sotorasib" in {c.lower() for c in err.value.extra["candidates"]}
+
+
+async def test_later_pages_do_not_say_no_approval_found(moa_service: MoaService) -> None:
+    out = await _search(moa_service, biomarker="BRAF V600E", disease="melanoma", offset=20)
+    assert out["approvals"] and "message" not in out

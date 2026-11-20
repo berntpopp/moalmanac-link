@@ -352,7 +352,7 @@ class MoaService:
         payload["response_mode"] = response_mode
         if rows and offset == 0:  # once per query, not on every page
             payload["summary"] = _summary(rows)
-        else:
+        if not rows:
             payload["message"] = _NO_APPROVAL.format(dv=snapshot.data_version())
         return self._stamp(payload)
 

@@ -128,3 +128,11 @@ async def test_not_found_envelope_carries_candidates(facade: Any) -> None:
 async def test_search_accepts_limit_zero(facade: Any, call_tool: Any) -> None:
     out = await call_tool(facade, "search_approvals", {"gene": "KRAS", "limit": 0})
     assert out["approvals"] == [] and out["total"] == 26 and "summary" in out
+
+
+async def test_limit_zero_next_step_fetches_rows(facade: Any, call_tool: Any) -> None:
+    res = await _raw(facade, "search_approvals", {"gene": "KRAS", "limit": 0})
+    assert res.structured_content["_meta"]["next_commands"][0] == {
+        "tool": "search_approvals",
+        "arguments": {"gene": "KRAS"},
+    }

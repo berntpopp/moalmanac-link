@@ -71,7 +71,9 @@ def _args(**values: Any) -> dict[str, Any]:
 
 
 def _paged(payload: dict[str, Any], tool: str, args: dict[str, Any]) -> list[dict[str, Any]]:
-    """Next page first when truncated."""
+    """Next page first when truncated (after a limit=0 count, the first page of rows)."""
+    if payload.get("limit") == 0 and payload.get("total"):
+        return [cmd(tool, **{k: v for k, v in args.items() if k != "limit"})]
     if payload.get("next_offset") is not None:
         return [cmd(tool, **{**args, "offset": payload["next_offset"]})]
     return []
