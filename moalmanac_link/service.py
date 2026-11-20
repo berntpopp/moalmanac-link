@@ -9,6 +9,7 @@ and can lag behind the agencies.
 
 from __future__ import annotations
 
+import difflib
 import re
 from collections import Counter
 from typing import Any
@@ -85,7 +86,12 @@ def _suggest(tokens: list[str], vocabulary: dict[str, str]) -> list[str]:
         if len(t) >= 3
     }
     score = {n: sum(1 / len(ns) for ns in hit.values() if n in ns) for n in vocabulary}
-    return sorted((n for n in vocabulary if score[n]), key=lambda n: (-score[n], n))[:5]
+    ranked = sorted((n for n in vocabulary if score[n]), key=lambda n: (-score[n], n))[:5]
+    if ranked:
+        return ranked
+    # no word prefix: fall back to spelling (sotorasibb -> Sotorasib)
+    by_norm = {_norm(n): n for n in vocabulary}
+    return [by_norm[m] for m in difflib.get_close_matches(" ".join(tokens), list(by_norm), 5, 0.8)]
 
 
 def _unknown(
@@ -248,7 +254,16 @@ class MoaService:
             rows = [r for r in rows if self._disease_hit(disease, r)]
         if therapy is not None:
             if not any(self._therapy_hit(therapy, r) for r in self.data["approvals"]):
-                raise _unknown("therapy", "therapy or brand name", cmd("search_approvals"))
+                names = {
+                    n: n
+                    for r in self.data["approvals"]
+                    for n in (*r["therapies"], r["label"]["brand"], r["label"]["generic"])
+                    if n
+                }
+                hint = _suggest(_norm(therapy).split(), names)
+                raise _unknown(
+                    "therapy", "therapy or brand name", cmd("search_approvals"), hint, given
+                )
             rows = [r for r in rows if self._therapy_hit(therapy, r)]
         if agency is not None:
             rows = [r for r in rows if r["agency"] == agency]
@@ -335,7 +350,7 @@ class MoaService:
         payload["approvals"] = [self._shape(r, response_mode) for r in page]
         payload.update(page_block(total=len(rows), returned=len(page), limit=limit, offset=offset))
         payload["response_mode"] = response_mode
-        if rows:
+        if rows and offset == 0:  # once per query, not on every page
             payload["summary"] = _summary(rows)
         else:
             payload["message"] = _NO_APPROVAL.format(dv=snapshot.data_version())

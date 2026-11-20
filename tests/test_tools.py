@@ -123,3 +123,8 @@ async def test_not_found_envelope_carries_candidates(facade: Any) -> None:
     body = res.structured_content
     assert res.is_error is True and body["field"] == "biomarker"
     assert "v::NTRK1" in body["candidates"]
+
+
+async def test_search_accepts_limit_zero(facade: Any, call_tool: Any) -> None:
+    out = await call_tool(facade, "search_approvals", {"gene": "KRAS", "limit": 0})
+    assert out["approvals"] == [] and out["total"] == 26 and "summary" in out

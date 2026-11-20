@@ -117,3 +117,20 @@ async def test_unknown_gene_suggests_symbols(moa_service: MoaService) -> None:
     with pytest.raises(NotFoundError) as err:
         await _search(moa_service, gene="NTRK")
     assert {"NTRK1", "NTRK2", "NTRK3"} <= set(err.value.extra["candidates"])
+
+
+async def test_limit_zero_returns_only_the_count_and_summary(moa_service: MoaService) -> None:
+    out = await _search(moa_service, biomarker="BRAF V600E", disease="melanoma", limit=0)
+    assert out["approvals"] == [] and out["total"] == 35 and out["summary"]
+    assert out["next_offset"] == 0
+
+
+async def test_summary_only_on_the_first_page(moa_service: MoaService) -> None:
+    out = await _search(moa_service, biomarker="BRAF V600E", disease="melanoma", offset=20)
+    assert "summary" not in out and out["total"] == 35
+
+
+async def test_unknown_therapy_suggests_names(moa_service: MoaService) -> None:
+    with pytest.raises(NotFoundError) as err:
+        await _search(moa_service, therapy="sotorasibb")
+    assert "sotorasib" in {c.lower() for c in err.value.extra["candidates"]}

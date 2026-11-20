@@ -51,6 +51,15 @@ Limit = Annotated[
     StrictInt,
     Field(ge=1, le=MAX_LIMIT, description=f"Max rows (default {DEFAULT_LIMIT}, max {MAX_LIMIT})."),
 ]
+SearchLimit = Annotated[
+    StrictInt,
+    Field(
+        ge=0,
+        le=MAX_LIMIT,
+        description=f"Max rows (default {DEFAULT_LIMIT}, max {MAX_LIMIT}); 0 = only total "
+        "and summary.",
+    ),
+]
 Offset = Annotated[
     StrictInt, Field(ge=0, description="Rows to skip; use the previous `next_offset`.")
 ]
@@ -110,7 +119,8 @@ def register_moa_tools(mcp: FastMCP) -> None:
             Field(
                 min_length=1,
                 max_length=80,
-                description="Biomarker words, e.g. 'BRAF V600E', 'G12C' (V600 also matches "
+                description="Biomarker words, e.g. 'BRAF V600E', 'G12C', 'v::ALK' (fusions are "
+                "'v::GENE', any partner; V600 also matches "
                 "V600E/K); an exact list_biomarkers name matches only that biomarker.",
             ),
         ] = None,
@@ -144,7 +154,7 @@ def register_moa_tools(mcp: FastMCP) -> None:
                 "predicate, strength | full: + fenced indication text."
             ),
         ] = "compact",
-        limit: Limit = DEFAULT_LIMIT,
+        limit: SearchLimit = DEFAULT_LIMIT,
         offset: Offset = 0,
     ) -> ToolReturn:
         args = _args(
