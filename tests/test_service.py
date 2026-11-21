@@ -162,9 +162,13 @@ async def test_every_listed_biomarker_count_is_retrievable(moa_service: MoaServi
     # Issue #4: "KIT p.D816V" listed 2 approvals, but both require its *absence* (imatinib in
     # systemic mastocytosis): the count must be what search_approvals returns for that name,
     # and the absence rows must be reachable as "NOT <name>".
+    # ...and the biomarker's own genes and type narrow nothing away, for name and "NOT name".
     for b in moa_service.data["biomarkers"]:
-        found = (await _search(moa_service, biomarker=b["name"], limit=1))["total"]
-        absent = (await _search(moa_service, biomarker=f"NOT {b['name']}", limit=1))["total"]
-        assert (found, absent) == (b["approvals"], b["approvals_when_absent"]), b["name"]
+        scopes = [{}, {"biomarker_type": b["type"]}, *({"gene": g} for g in b["genes"])]
+        for kw in scopes:
+            found = (await _search(moa_service, biomarker=b["name"], limit=1, **kw))["total"]
+            absent = await _search(moa_service, biomarker=f"NOT {b['name']}", limit=1, **kw)
+            got = (found, absent["total"])
+            assert got == (b["approvals"], b["approvals_when_absent"]), (b["name"], kw)
     kit = await _search(moa_service, biomarker="NOT KIT p.D816V")
     assert kit["total"] == 2 and _therapies(kit) == {"Imatinib"}
