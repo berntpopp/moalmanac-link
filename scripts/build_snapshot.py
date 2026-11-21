@@ -146,6 +146,7 @@ def derive(tables: dict[str, Any]) -> dict[str, Any]:
             "type": b["biomarker_type"],
             "genes": sorted(set(linked)),
             "approvals": 0,
+            "approvals_when_absent": 0,
         }
 
     def disease(did: str) -> dict[str, Any]:
@@ -189,7 +190,8 @@ def derive(tables: dict[str, Any]) -> dict[str, Any]:
         criteria = [by["biomarker_criteria"][c] for c in prop["biomarker_criteria"]]
         markers = []
         for c in criteria:
-            biomarkers[c["subject"]]["approvals"] += 1
+            # a criterion can require absence ("NOT KIT p.D816V"): counted apart, as the rows say
+            biomarkers[c["subject"]]["approvals" if c["present"] else "approvals_when_absent"] += 1
             markers.append({**biomarkers[c["subject"]], "present": c["present"]})
         dates = [
             by["contributions"][c]["date"]

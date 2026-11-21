@@ -28,7 +28,7 @@
     "referenced/urls.json": "d8eb906646c0eb152d1a08ca6edefdce12aa126d6a7e244f58e663c933b9768f"
   },
   "derived_file": "moalmanac_snapshot.json",
-  "derived_sha256": "b62d24c7f173e62159c276a31281aee69b5778f4210105ea4bdce3f989fee498",
+  "derived_sha256": "75ca3d32a61bab16a4390c6edde39d325973f1805c977d64e0d274140c513d0f",
   "counts": {
     "approvals": 2011,
     "indications": 902,

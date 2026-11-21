@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-11-21
+
+### Fixed
+
+- `list_biomarkers` counted approvals that require a biomarker's *absence* as approvals for
+  it ("KIT p.D816V" listed 2, `search_approvals(biomarker="KIT p.D816V")` returned none: both
+  are imatinib for systemic mastocytosis *without* D816V; also `BCR::ABL1`, `17p deletion`).
+  `approvals` now counts only rows that require the biomarker; the new
+  `approvals_when_absent` counts the others, which `search_approvals(biomarker="NOT <name>")`
+  now returns (#4).
+
 ## [0.2.0] - 2026-11-20
 
 ### Added

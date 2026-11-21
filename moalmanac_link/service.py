@@ -221,7 +221,8 @@ class MoaService:
             rows = [r for r in rows if gene in r["genes"]]
         if biomarker is not None:
             names = {b["name"]: f"{b['name']} {b['type']}" for b in self.data["biomarkers"]}
-            exact = next((n for n in names if _norm(n) == _norm(biomarker)), None)
+            vocab = [*names, *(f"NOT {n}" for n in names)]  # rows name absence as "NOT <name>"
+            exact = next((n for n in vocab if _norm(n) == _norm(biomarker)), None)
             if exact is not None:  # a vocabulary name (from list_biomarkers) means that one
                 rows = [r for r in rows if exact in r["biomarkers"]]
             elif not any(_matches(biomarker, n) for n in names):
