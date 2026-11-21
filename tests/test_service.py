@@ -156,3 +156,15 @@ async def test_short_tokens_match_whole_words_not_substrings(moa_service: MoaSer
     assert {"BRAF p.V600E", "BRAF p.V600K"} <= {
         b for r in v600["approvals"] for b in r["biomarkers"]
     }
+
+
+async def test_every_listed_biomarker_count_is_retrievable(moa_service: MoaService) -> None:
+    # Issue #4: "KIT p.D816V" listed 2 approvals, but both require its *absence* (imatinib in
+    # systemic mastocytosis): the count must be what search_approvals returns for that name,
+    # and the absence rows must be reachable as "NOT <name>".
+    for b in moa_service.data["biomarkers"]:
+        found = (await _search(moa_service, biomarker=b["name"], limit=1))["total"]
+        absent = (await _search(moa_service, biomarker=f"NOT {b['name']}", limit=1))["total"]
+        assert (found, absent) == (b["approvals"], b["approvals_when_absent"]), b["name"]
+    kit = await _search(moa_service, biomarker="NOT KIT p.D816V")
+    assert kit["total"] == 2 and _therapies(kit) == {"Imatinib"}

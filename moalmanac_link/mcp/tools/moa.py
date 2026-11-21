@@ -124,7 +124,8 @@ def register_moa_tools(mcp: FastMCP) -> None:
                 max_length=80,
                 description="Biomarker words, e.g. 'BRAF V600E', 'G12C', 'v::ALK' (fusions are "
                 "'v::GENE', any partner; V600 also matches "
-                "V600E/K); an exact list_biomarkers name matches only that biomarker.",
+                "V600E/K); an exact list_biomarkers name matches only that biomarker, and "
+                "'NOT <name>' the rows that require its absence.",
             ),
         ] = None,
         disease: Annotated[
@@ -243,7 +244,8 @@ def register_moa_tools(mcp: FastMCP) -> None:
         tags={"biomarkers"},
         description=(
             "List MOAlmanac's biomarker vocabulary (e.g. 'EGFR p.L858R', 'HER2-positive', "
-            "'ERBB2 amplification') with type, linked genes and active approval count, most "
+            "'ERBB2 amplification') with type, linked genes and active approval count "
+            "(`approvals_when_absent`: approvals that require its absence), most "
             "approvals first: map a variant onto the biomarker wording search_approvals "
             "matches. Signature: list_biomarkers(gene=, biomarker_type=, limit=, offset=)."
         ),
