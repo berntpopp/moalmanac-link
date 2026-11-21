@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - 2026-11-21
+
+### Fixed
+
+- `search_approvals(biomarker="NOT <name>")` with `gene=` or `biomarker_type=` returned an
+  empty success: those filters read the row's present biomarkers only, and a "NOT" row's
+  required-absent biomarker is not one. They now also match the absent biomarker's own genes
+  and type, so `gene="KIT", biomarker="NOT KIT p.D816V"` returns its 2 imatinib rows (#4).
+
 ## [0.2.1] - 2026-11-21
 
 ### Fixed

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "moalmanac-link"
-version = "0.2.1"
+version = "0.2.2"
 description = "MCP server for Molecular Oncology Almanac (MOAlmanac) regulatory approvals of biomarker-directed cancer therapies (FDA, EMA, Health Canada, HSE, HPRA; research use only)"
 readme = "README.md"
 license = { text = "MIT" }

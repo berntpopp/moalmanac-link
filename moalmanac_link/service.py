@@ -217,12 +217,15 @@ class MoaService:
                          "therapy": therapy, "agency": agency}.items()
             if v is not None
         }  # fmt: skip
-        if gene is not None:
-            rows = [r for r in rows if gene in r["genes"]]
+        # a "NOT <name>" search: rows that require that biomarker's absence, whose `genes` (the
+        # present markers' genes) leave it out, so `gene`/`biomarker_type` also match its own
+        absent: dict[str, Any] = {"name": None, "genes": [], "type": None}
         if biomarker is not None:
             names = {b["name"]: f"{b['name']} {b['type']}" for b in self.data["biomarkers"]}
             vocab = [*names, *(f"NOT {n}" for n in names)]  # rows name absence as "NOT <name>"
             exact = next((n for n in vocab if _norm(n) == _norm(biomarker)), None)
+            if exact is not None and exact not in names:
+                absent = next(b for b in self.data["biomarkers"] if f"NOT {b['name']}" == exact)
             if exact is not None:  # a vocabulary name (from list_biomarkers) means that one
                 rows = [r for r in rows if exact in r["biomarkers"]]
             elif not any(_matches(biomarker, n) for n in names):
@@ -268,6 +271,8 @@ class MoaService:
                     "therapy", "therapy or brand name", cmd("search_approvals"), hint, given
                 )
             rows = [r for r in rows if self._therapy_hit(therapy, r)]
+        if gene is not None:
+            rows = [r for r in rows if gene in r["genes"] or gene in absent["genes"]]
         if agency is not None:
             rows = [r for r in rows if r["agency"] == agency]
         if biomarker_type is not None:  # e.g. Gene fusion: keeps v::ALK, drops Wild type ALK
@@ -276,6 +281,8 @@ class MoaService:
                 for b in self.data["biomarkers"]
                 if b["type"] == biomarker_type and (gene is None or gene in b["genes"])
             }
+            if absent["type"] == biomarker_type and (gene is None or gene in absent["genes"]):
+                kinds.add(f"NOT {absent['name']}")
             rows = [r for r in rows if kinds.intersection(r["biomarkers"])]
         return rows
 
