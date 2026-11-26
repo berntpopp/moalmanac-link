@@ -57,3 +57,20 @@ async def test_error_result_validates(facade: Any, call_tool: Any) -> None:
     out = await call_tool(facade, "get_indication", {"indication_id": "ind:fda:nope:0"})
     assert out["success"] is False
     jsonschema.validate(out, SCHEMA)
+
+
+PAGED = {"list_biomarkers", "search_approvals"}
+
+
+@pytest.mark.parametrize(("tool", "arguments"), DATA_CALLS)
+async def test_paged_tools_report_meta_pagination(
+    facade: Any, call_tool: Any, tool: str, arguments: dict[str, Any]
+) -> None:
+    out = await call_tool(facade, tool, arguments)
+    if tool not in PAGED:
+        assert "pagination" not in out["_meta"]
+        return
+    page = out["_meta"]["pagination"]
+    assert page["total_count"] == out["total"] and page["has_more"] == out["truncated"]
+    assert page["next_cursor"] == out.get("next_cursor")
+    assert page.get("next_offset") == out.get("next_offset")
