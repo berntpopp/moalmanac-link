@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-11-26
+
+### Added
+
+- Paged tools (`list_biomarkers`, `search_approvals`) report `_meta.pagination` with `total_count`, `has_more` and
+  `next_cursor` (`null` where paging is by offset, which then also carries `next_offset`), as
+  Response-Envelope Standard v1 §5 asks. The top-level paging fields are unchanged.
+
 ## [0.3.0] - 2026-11-26
 
 ### Added
