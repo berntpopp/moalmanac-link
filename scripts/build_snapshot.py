@@ -17,6 +17,7 @@ import hashlib
 import json
 import sys
 import urllib.request
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -286,6 +287,7 @@ def main(argv: list[str] | None = None) -> int:
         "upstream_last_updated": tables["about"]["last_updated"],
         "source_repo": REPO,
         "source_commit": COMMIT,
+        "retrieved_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "doi": DOI,
         "license": "CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/)",
         "attribution": "Molecular Oncology Almanac, Van Allen lab, Dana-Farber Cancer Institute "

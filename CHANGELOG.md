@@ -4,6 +4,32 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-11-26
+
+### Added
+
+- Response-Envelope Standard v1.2: every successful data result carries `_meta.source`,
+  `_meta.data_version` (the MOAlmanac release tag) and `_meta.retrieved_at` (UTC time the
+  bundled snapshot was downloaded from the upstream).
+- `moalmanac_provenance.json` records `retrieved_at`; `scripts/build_snapshot.py` writes it. For
+  the shipped snapshot the download time was not recorded, so it is the time the snapshot was
+  last committed.
+- Schema tests: every data tool result is validated against the vendored
+  `envelope-v1.2.schema.json` (genefoundry-envelope v1.2.0, sha256-pinned).
+
+### Changed
+
+- **Breaking:** the primary payload key is now `results` (`search_approvals`,
+  `list_biomarkers`) or `result` (`get_indication`), per Response-Envelope Standard v1 §1. It
+  was `approvals`, `biomarkers` and `indication`. `get_indication` still lists its
+  `approvals` beside `result`.
+- Re-vendored `tests/conformance/behaviour.py` from genefoundry-router (v1.2 provenance check).
+
+### Deprecated
+
+- The top-level `data_version` of a data result. Read it from `_meta`; the top-level copy will
+  be removed in the next minor release.
+
 ## [0.2.2] - 2026-11-21
 
 ### Fixed
