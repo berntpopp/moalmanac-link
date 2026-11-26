@@ -43,6 +43,11 @@ def data_version() -> str:
     return str(provenance()["data_version"])
 
 
+def retrieved_at() -> str:
+    """UTC time the snapshot was downloaded from the upstream (Response-Envelope v1.2)."""
+    return str(provenance()["retrieved_at"])
+
+
 def check(snapshot: dict[str, Any]) -> None:
     """Schema guard over a loaded snapshot; raises :class:`SnapshotError` on any gap."""
     if snapshot.get("schema_version") != SCHEMA_VERSION:

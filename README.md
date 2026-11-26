@@ -93,7 +93,8 @@ search_approvals(therapy="sotorasib", disease="colorectal")
 DOI [10.5281/zenodo.23986188](https://doi.org/10.5281/zenodo.23986188)), the `referenced/`
 tables. `scripts/build_snapshot.py` keeps the active statements and writes
 `moalmanac_link/data/` with a provenance record (source sha256s, derived sha256, counts).
-`data_version` is the release tag. Rebuild on a new release by bumping `TAG`/`COMMIT`.
+Each data result states `source`, `data_version` (the release tag) and `retrieved_at` (when
+the snapshot was downloaded) in `_meta`. Rebuild on a new release by bumping `TAG`/`COMMIT`.
 
 **Scope.** Every statement is a regulatory approval (strength "Approval", predicate
 `predictsSensitivityTo`). There are no trial, guideline, resistance or prognostic tiers; use

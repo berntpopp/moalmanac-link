@@ -105,17 +105,17 @@ async def test_capabilities_and_diagnostics(facade: Any, call_tool: Any) -> None
 async def test_descriptions_name_only_returned_fields(facade: Any, call_tool: Any) -> None:
     """Contract truth: the fields a description promises are in the response."""
     out = await call_tool(facade, "search_approvals", {"gene": "BRAF", "limit": 1})
-    row = out["approvals"][0]
+    row = out["results"][0]
     assert {"agency", "status", "biomarkers", "genes", "disease", "therapies", "label"} <= set(row)
     assert {"ncit", "oncotree"} <= set(row["disease"])
     assert {"document_id", "version_date", "regulatory_id"} <= set(row["label"])
     ind = await call_tool(facade, "get_indication", {"indication_id": row["indication_id"]})
-    assert {"status", "description", "contributions", "documents"} <= set(ind["indication"])
+    assert {"status", "description", "contributions", "documents"} <= set(ind["result"])
     assert {"brand", "generic", "company", "version_date", "regulatory_id", "url"} <= set(
-        ind["indication"]["documents"][0]
+        ind["result"]["documents"][0]
     )
     bms = await call_tool(facade, "list_biomarkers", {"gene": "EGFR"})
-    assert {"name", "type", "genes", "approvals"} <= set(bms["biomarkers"][0])
+    assert {"name", "type", "genes", "approvals"} <= set(bms["results"][0])
 
 
 async def test_not_found_envelope_carries_candidates(facade: Any) -> None:
@@ -127,7 +127,7 @@ async def test_not_found_envelope_carries_candidates(facade: Any) -> None:
 
 async def test_search_accepts_limit_zero(facade: Any, call_tool: Any) -> None:
     out = await call_tool(facade, "search_approvals", {"gene": "KRAS", "limit": 0})
-    assert out["approvals"] == [] and out["total"] == 26 and "summary" in out
+    assert out["results"] == [] and out["total"] == 26 and "summary" in out
 
 
 async def test_limit_zero_next_step_fetches_rows(facade: Any, call_tool: Any) -> None:

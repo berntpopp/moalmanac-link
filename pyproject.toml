@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "moalmanac-link"
-version = "0.2.2"
+version = "0.3.0"
 description = "MCP server for Molecular Oncology Almanac (MOAlmanac) regulatory approvals of biomarker-directed cancer therapies (FDA, EMA, Health Canada, HSE, HPRA; research use only)"
 readme = "README.md"
 license = { text = "MIT" }
@@ -45,6 +45,7 @@ dev = [
     "pytest-cov>=5.0.0,<8.0.0",
     "pytest-mock>=3.14.0,<4.0.0",
     "pytest-xdist>=3.6.0,<4.0.0",
+    "jsonschema>=4.23.0,<5.0.0",
     "httpx>=0.28.0,<1.0.0",
     "ruff>=0.16.8,<1.0.0",
     "mypy>=2.3.1,<3.0.0",

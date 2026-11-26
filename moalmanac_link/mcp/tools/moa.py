@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, get_args
 
 from pydantic import Field, StrictInt
 
+from moalmanac_link import snapshot
 from moalmanac_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from moalmanac_link.mcp.envelope import McpErrorContext, ToolReturn, run_mcp_tool
+from moalmanac_link.mcp.envelope import McpErrorContext, ToolReturn, as_result, run_mcp_tool
 from moalmanac_link.mcp.next_commands import cmd
 from moalmanac_link.mcp.service_adapters import get_moa_service
 from moalmanac_link.service import AGENCIES
@@ -79,6 +80,14 @@ def _paged(payload: dict[str, Any], tool: str, args: dict[str, Any]) -> list[dic
     return []
 
 
+#: The service payload field each tool publishes as ``result`` (object) or ``results`` (array).
+_PRIMARY = {
+    "search_approvals": "approvals",
+    "get_indication": "indication",
+    "list_biomarkers": "biomarkers",
+}
+
+
 async def _run(
     tool: str,
     args: dict[str, Any],
@@ -87,8 +96,13 @@ async def _run(
 ) -> ToolReturn:
     async def call() -> dict[str, Any]:
         payload = await fetch()
-        payload["_meta"] = {"next_commands": steps(payload)}
-        return payload
+        payload["_meta"] = {
+            "next_commands": steps(payload),
+            # Response-Envelope v1.2 provenance; the top-level data_version is deprecated.
+            "data_version": payload["data_version"],
+            "retrieved_at": snapshot.retrieved_at(),
+        }
+        return as_result(payload, _PRIMARY[tool])
 
     return await run_mcp_tool(tool, call, context=McpErrorContext(tool, arguments=args))
 
